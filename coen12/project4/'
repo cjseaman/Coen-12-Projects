@@ -1,0 +1,163 @@
+/*
+	Collin Seaman
+	Atkinson COEN 12 
+	Project 4: Circular Doubly Linked List
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <stdbool.h>
+#include "list.h"
+
+struct node {
+	struct node *next;
+	struct node *previous;
+	void *data;
+};
+
+struct list {
+	int count;
+	struct node *head;
+	int (*compare)();
+};
+	
+#define NODE struct node
+
+LIST *createList(int (*compare)()) {
+	LIST *listPoint;
+	NODE *dummyNode;
+	listPoint = malloc(sizeof(LIST));
+	assert(listPoint != NULL);
+	listPoint->count = 0;
+	listPoint->compare = compare;
+	dummyNode = malloc(sizeof(NODE));
+	listPoint->head=dummyNode;
+	dummyNode->next=dummyNode;
+	dummyNode->previous=dummyNode;
+	return listPoint;
+}
+
+void destroyList(LIST *lp) {
+	NODE *p = lp->head->next;
+	while (p != lp->head) {
+		p = p->next;
+		free(p->previous);
+	}
+	free(p);
+	free(lp);
+}
+
+int numItems(LIST *lp) {
+	return lp->count;
+}
+
+void addFirst(LIST *lp, void *item) {
+	NODE *p = malloc(sizeof(NODE));
+	assert(p != NULL);
+	
+	lp->head->next->previous = p;
+	p->next = lp->head->next;
+	p->previous = lp->head;
+	lp->head->next = p;
+	
+	lp->count++;
+	
+	p->data = item;
+}
+
+void addLast(LIST *lp, void *item) {
+	NODE *p = malloc(sizeof(NODE));
+	assert(p != NULL);
+	
+	p->previous = lp->head->previous;
+	lp->head->previous = p;
+	p->previous->next = p;
+	p->next = lp->head;
+	
+	lp->count++;
+
+	p->data = item;
+}
+
+void *removeFirst(LIST *lp) {
+	void *item;
+	NODE *first;
+	if (lp->head->next == lp->head) {
+		return NULL;
+	}
+	first = lp->head->next;
+	item = first->data;
+	first->next->previous = lp->head;
+	lp->head->next = first->next;
+	
+	lp->count--;
+
+	free(first);
+	return item;
+}
+
+void *removeLast(LIST *lp) {
+	void *item;
+	NODE *last;
+	if (lp->head->previous == lp->head) {
+		return NULL;
+	}
+	last = lp->head->previous;
+	item = last->data;
+	lp->head->previous = last->previous;
+	last->previous->next = lp->head;
+	
+	lp->count--;
+	
+	free(last);
+	return item;
+}
+
+void *getFirst(LIST *lp) {
+	return lp->head->next->data;
+}
+
+void *getLast(LIST *lp) {
+	return lp->head->previous->data;
+}
+
+void removeItem(LIST *lp, void *item) {
+	NODE *p = lp->head;
+	while (p->next != lp->head) {
+		p=p->next;
+		if (lp->compare(p->data, item) == 0) {
+			p->previous->next = p->next;
+			p->next->previous = p->previous;
+			free(p);
+			return;
+		}
+	}
+}
+
+void *findItem(LIST *lp, void *item) {
+	NODE *p = lp->head;
+	assert(lp->compare != NULL);
+	while (p->next != lp->head) {
+		p=p->next;
+		if (lp->compare(p->data, item) == 0) {
+			return p->data;
+		}
+	}
+	return NULL;
+}
+
+void *getItems(LIST *lp) {
+	int i;
+	void **array;
+	NODE *p=lp->head->next;
+	array=malloc(sizeof(void*)*(lp->count));
+	assert(array != NULL);
+	for (i=0; i<lp->count; i++) {
+		array[i]=p->data;
+		p=p->next;
+	}
+	return array;
+}
+	
